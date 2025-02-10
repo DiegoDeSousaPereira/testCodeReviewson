@@ -38,7 +38,10 @@ jobs:
 
       - name: Call ChatGPT with PR content
         run: |
+            # Decode base64 changes to normal text (for debugging or if needed)
             decoded_changes=$(echo "${{ env.ENCODED_CHANGES }}" | base64 --decode)
+  
+            # Use jq to create JSON payload safely
             json_payload=$(jq -n --arg content "$decoded_changes" --arg additionalMessage "Faça um code review, seja breve e aponte os pontos de melhoria em português" '{
               model: "gpt-4o-mini",
               store: true,
@@ -47,12 +50,14 @@ jobs:
                 {role: "user", content: $content}
               ]
             }')
+  
+            # Send request to OpenAI API
             response=$(curl -s https://api.openai.com/v1/chat/completions \
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
               -d "$json_payload")
-            response_content=$(echo "$response" | jq -r '.choices[0].message.content' | sed 's/"/\\"/g')  # Escape double quotes
-            echo "CHOSEN_RESPONSE=$response_content" >> $GITHUB_ENV
+            
+            echo "Response from ChatGPT: $response"
         
   
       - name: Post Comment on PR
