@@ -58,6 +58,8 @@ jobs:
               -d "$json_payload")
             
             echo "Response from ChatGPT: $response"
+            echo "RESPONSE=$response" >> $GITHUB_ENV
+
         
   
       - name: Post Comment on PR
@@ -65,6 +67,6 @@ jobs:
             curl -s \
               -H "Authorization: token ${{ secrets.GH_PAT }}" \
               -H "Accept: application/vnd.github.v3+json" \
-              -d '{"body": "teste"}' \
+              -d '{"body": "${{ env.RESPONSE }}"}' \
               "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
   
