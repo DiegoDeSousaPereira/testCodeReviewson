@@ -46,7 +46,7 @@ jobs:
             model: "gpt-4o-mini",
             store: true,
             messages: [
-              {role: "user", content: $content}
+              {role: "user", content:faca um code review e aponte melhorias $content}
             ]
           }')
 
