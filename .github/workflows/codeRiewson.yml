@@ -12,7 +12,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure the whole repo history is pulled
+          fetch-depth: 0  
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install jq
@@ -42,7 +42,7 @@ jobs:
             decoded_changes=$(echo "${{ env.ENCODED_CHANGES }}" | base64 --decode)
   
             # Use jq to create JSON payload safely
-            json_payload=$(jq -n --arg content "$decoded_changes" --arg additionalMessage "Faça um code review, seja breve e aponte os pontos de melhoria em português" '{
+            json_payload=$(jq -n --arg content "$decoded_changes" --arg additionalMessage "Voce é um desenvolvedor senior e esta analisando uma pull request, validando se o codigo tem uma má pratica, caso tenham informe a linha, codigo que tem a má pratica e uma possivel solução" '{
               model: "gpt-4o-mini",
               store: true,
               messages: [
