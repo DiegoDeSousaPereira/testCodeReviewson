@@ -1,0 +1,46 @@
+name: Integrate PR Content with ChatGPT
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  interact-with-chatgpt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensure the whole repo history is pulled
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Extract PR Content
+        id: pr-content
+        run: |
+          # Fetching the merge reference of the PR
+          git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
+          git checkout FETCH_HEAD
+          # Assume we're focusing on a specific file's changes or PR description
+          pr_description="${{ github.event.pull_request.body }}"
+          echo "PR_DESCRIPTION<<EOF" >> $GITHUB_ENV
+          echo "$pr_description" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Call ChatGPT with PR content
+        run: |
+          response=$(curl -s https://api.openai.com/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+            -d '{
+                    "model": "gpt-4o",
+                    "store": true,
+                    "messages": [
+                        {"role": "user", "content": "'"$PR_DESCRIPTION"'"} 
+                    ]
+                }')
+          echo "Response from ChatGPT: $response"
