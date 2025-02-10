@@ -37,7 +37,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
             -d '{
-                    "model": "gpt-4o",
+                    "model": "gpt-4o-mini",
                     "store": true,
                     "messages": [
                         {"role": "user", "content": "'"$PR_DESCRIPTION"'"} 
