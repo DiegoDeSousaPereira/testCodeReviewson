@@ -59,12 +59,15 @@ jobs:
           
           echo "Response from ChatGPT: $response"
 
-      - name: Post response to GitHub PR
+      - name: Verify and adjust the format of $response
         run: |
-            # Verificar e ajustar o formato de $response para garantir que contém o campo 'body'
-            corrected_response=$(echo "$response" | jq -c '. | if type=="object" and has("body") then . else {body: .} end')
+            echo "Original Response: $response"
       
-            # Postar o comentário na Pull Request usando GH_PAT
+            # Verify and adjust the format of $response to ensure it contains the 'body' field
+            corrected_response=$(echo "$response" | jq -c '. | if type=="object" and has("body") then . else {body: .} end')
+            echo "Corrected Response: $corrected_response"
+            
+            # Post the comment to the Pull Request using GH_PAT
             final_response=$(curl -s -w "HTTP_STATUS:%{http_code}" -H "Authorization: token ${{ secrets.GH_PAT }}" \
                  -H "Content-Type: application/json" \
                  -X POST \
@@ -75,8 +78,10 @@ jobs:
             if [[ "$final_response" == *"HTTP_STATUS:403"* || "$final_response" == *"HTTP_STATUS:422"* ]]; then
               echo "Failed to post comment due to permissions or other restrictions."
             fi
+        shell: /usr/bin/bash -e {0}
         env:
          GH_PAT: ${{ secrets.GH_PAT }}
+      
       
       
       
