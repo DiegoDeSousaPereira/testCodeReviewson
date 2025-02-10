@@ -42,10 +42,11 @@ jobs:
           decoded_changes=$(echo "${{ env.ENCODED_CHANGES }}" | base64 --decode)
 
           # Use jq to create JSON payload safely
-          json_payload=$(jq -n --arg content "$decoded_changes" '{
+          json_payload=$(jq -n --arg content "$decoded_changes" --arg additionalMessage "Faca um code review, seja breve a aponte os pontos de melhoria" '{
             model: "gpt-4o-mini",
             store: true,
             messages: [
+              {role: "user", content: $additionalMessage},
               {role: "user", content: $content}
             ]
           }')
