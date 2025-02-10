@@ -51,8 +51,9 @@ jobs:
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
               -d "$json_payload")
-            response_content=$(echo "$response" | jq -r '.choices[0].message.content')
+            response_content=$(echo "$response" | jq -r '.choices[0].message.content' | sed 's/"/\\"/g')  # Escape double quotes
             echo "CHOSEN_RESPONSE=$response_content" >> $GITHUB_ENV
+        
   
       - name: Post Comment on PR
         run: |
