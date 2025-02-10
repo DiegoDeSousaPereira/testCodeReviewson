@@ -49,7 +49,7 @@ jobs:
                     "model": "gpt-4o-mini",
                     "store": true,
                     "messages": [
-                        {"role": "user", "content": "'"${{ env.JSON_SAFE_PR_DESCRIPTION }}"'"} 
+                        {"role": "user", "content": "'"Faca um code review desse codigo, seja breve e aponte melhorias${{ env.JSON_SAFE_PR_DESCRIPTION }}"'"} 
                     ]
                 }')
           echo "Response from ChatGPT: $response"
