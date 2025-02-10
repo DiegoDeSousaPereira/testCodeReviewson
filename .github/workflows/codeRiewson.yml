@@ -24,20 +24,26 @@ jobs:
           # Fetching the merge reference of the PR
           git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
           git checkout FETCH_HEAD
-          # Extracting PR description
-          pr_description="${{ github.event.pull_request.body }}"
-          echo "Extracted PR Description: $pr_description"
-          echo "PR_DESCRIPTION<<EOF" >> $GITHUB_ENV
-          echo "$pr_description" >> $GITHUB_ENV
+          # Get the list of files changed
+          files_changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD)
+          echo "Files Changed: $files_changed"
+          # Capture changes for each file
+          changes=""
+          for file in $files_changed; do
+            changes+="$(echo -e "\n$file:\n$(git diff ${{ github.event.pull_request.base.sha }} HEAD -- $file)")"
+          done
+          echo "Changes: $changes"
+          echo "PR_CHANGES<<EOF" >> $GITHUB_ENV
+          echo "$changes" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Prepare PR Content for JSON
         run: |
           # Escape special characters to make the string JSON-safe
-          json_pr_description=$(echo "$PR_DESCRIPTION" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
-          echo "Formatted PR Description for JSON: $json_pr_description"
-          echo "JSON_SAFE_PR_DESCRIPTION<<EOF" >> $GITHUB_ENV
-          echo "$json_pr_description" >> $GITHUB_ENV
+          json_pr_changes=$(echo "$PR_CHANGES" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
+          echo "Formatted PR Changes for JSON: $json_pr_changes"
+          echo "JSON_SAFE_PR_CHANGES<<EOF" >> $GITHUB_ENV
+          echo "$json_pr_changes" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Call ChatGPT with PR content
@@ -49,7 +55,7 @@ jobs:
                     "model": "gpt-4o-mini",
                     "store": true,
                     "messages": [
-                        {"role": "user", "content": "'"Faca um code review desse codigo, seja breve e aponte melhorias${{ env.JSON_SAFE_PR_DESCRIPTION }}"'"} 
+                        {"role": "user", "content": "'"faca um code review, seja breve em falar os pontos para melhorar${{ env.JSON_SAFE_PR_CHANGES }}"'"} 
                     ]
                 }')
           echo "Response from ChatGPT: $response"
