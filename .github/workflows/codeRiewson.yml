@@ -12,39 +12,25 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure the whole repo history is pulled
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Extract PR Content
+      - name: Extract and Prepare PR Content
         run: |
-          # Fetching the merge reference of the PR
           git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
           git checkout FETCH_HEAD
-          # Get the list of files changed
           files_changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD)
-          echo "Files Changed: $files_changed"
-          # Capture changes for each file
           changes=""
           for file in $files_changed; do
-            changes+="$(echo -e "\n$file:\n$(git diff ${{ github.event.pull_request.base.sha }} HEAD -- $file)")"
+            changes+="$file:\n$(git diff ${{ github.event.pull_request.base.sha }} HEAD -- $file)\n"
           done
-          echo "Changes: $changes"
-          echo "PR_CHANGES<<EOF" >> $GITHUB_ENV
-          echo "$changes" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Prepare PR Content for JSON
-        run: |
-          # Escape special characters to make the string JSON-safe
-          json_pr_changes=$(echo "$PR_CHANGES" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
-          echo "Formatted PR Changes for JSON: $json_pr_changes"
-          echo "JSON_SAFE_PR_CHANGES<<EOF" >> $GITHUB_ENV
-          echo "$json_pr_changes" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          # Encode changes to base64 to ensure safe transmission
+          encoded_changes=$(echo "$changes" | base64)
+          echo "ENCODED_CHANGES=$encoded_changes" >> $GITHUB_ENV
 
       - name: Call ChatGPT with PR content
         run: |
@@ -55,7 +41,7 @@ jobs:
                     "model": "gpt-4o-mini",
                     "store": true,
                     "messages": [
-                        {"role": "user", "content": "'"faca um code review, seja breve em falar os pontos para melhorar${{ env.JSON_SAFE_PR_CHANGES }}"'"} 
+                        {"role": "user", "content": "${{ env.ENCODED_CHANGES }}"}
                     ]
                 }')
           echo "Response from ChatGPT: $response"
