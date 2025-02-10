@@ -57,16 +57,12 @@ jobs:
               -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
               -d "$json_payload")
             
-            echo "Response from ChatGPT: $response"
-            echo "RESPONSE=$response" >> $GITHUB_ENV
+            # echo "Response from ChatGPT: $response"
 
-        
-  
-      - name: Post Comment on PR
-        run: |
             curl -s \
               -H "Authorization: token ${{ secrets.GH_PAT }}" \
               -H "Accept: application/vnd.github.v3+json" \
-              -d '{"body": "${{ env.RESPONSE }}"}' \
+              -d '{"body": "$response"}' \
               "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+        
   
