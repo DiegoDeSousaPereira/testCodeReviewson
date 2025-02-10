@@ -12,7 +12,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Ensure the whole repo history is pulled
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -34,6 +34,8 @@ jobs:
 
       - name: Call ChatGPT with PR content
         run: |
+          # Decode base64 changes to normal text if necessary
+          decoded_changes=$(echo "${{ env.ENCODED_CHANGES }}" | base64 --decode)
           response=$(curl -s https://api.openai.com/v1/chat/completions \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
@@ -41,7 +43,7 @@ jobs:
                     "model": "gpt-4o-mini",
                     "store": true,
                     "messages": [
-                        {"role": "user", "content": "${{ env.ENCODED_CHANGES }}"}
+                        {"role": "user", "content": "'"$decoded_changes"'"}
                     ]
                 }')
           echo "Response from ChatGPT: $response"
