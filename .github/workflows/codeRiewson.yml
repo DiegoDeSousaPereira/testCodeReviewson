@@ -27,6 +27,7 @@ jobs:
           git checkout FETCH_HEAD
           # Assume we're focusing on a specific file's changes or PR description
           pr_description="${{ github.event.pull_request.body }}"
+          echo "Response from ChatGPT: $pr_description"
           echo "PR_DESCRIPTION<<EOF" >> $GITHUB_ENV
           echo "$pr_description" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
