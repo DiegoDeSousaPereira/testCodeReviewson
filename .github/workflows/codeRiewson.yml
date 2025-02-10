@@ -61,18 +61,22 @@ jobs:
 
       - name: Post response to GitHub PR
         run: |
+            # Verificar e ajustar o formato de $response para garantir que contém o campo 'body'
+            corrected_response=$(echo "$response" | jq -c '. | if type=="object" and has("body") then . else {body: .} end')
+      
             # Postar o comentário na Pull Request usando GH_PAT
             final_response=$(curl -s -w "HTTP_STATUS:%{http_code}" -H "Authorization: token ${{ secrets.GH_PAT }}" \
                  -H "Content-Type: application/json" \
                  -X POST \
-                 -d "$response" \
-                 "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments")
-            
+                 -d "$corrected_response" \
+                 "https://api.github.com/repos/DiegoDeSousaPereira/testCodeReviewson/issues/2/comments")
+      
             echo "$final_response"
             if [[ "$final_response" == *"HTTP_STATUS:403"* || "$final_response" == *"HTTP_STATUS:422"* ]]; then
               echo "Failed to post comment due to permissions or other restrictions."
             fi
         env:
          GH_PAT: ${{ secrets.GH_PAT }}
+      
       
       
