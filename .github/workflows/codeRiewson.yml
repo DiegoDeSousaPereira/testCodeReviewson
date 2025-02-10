@@ -53,13 +53,21 @@ jobs:
   
             # Send request to OpenAI API
             response=$(curl -s https://api.openai.com/v1/chat/completions \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
-              -d "$json_payload")
-            
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+            -d "$json_payload")
+
             # Extract the 'content' field from the response
             content=$(echo $response | jq -r '.choices[0].message.content')
 
-            # Echo the 'content' field
-            echo "Content from ChatGPT: $content"
+            # Prepare the JSON body for the GitHub API request, escaping newlines and quotes
+            json_body=$(jq -n --arg body "$content" '{"body": $body}')
+
+            # Post the content as a comment to the pull request
+            curl -s \
+            -H "Authorization: token ${{ secrets.GH_PAT }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d "$json_body" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+
           
