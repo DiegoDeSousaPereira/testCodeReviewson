@@ -61,23 +61,18 @@ jobs:
 
       - name: Post response to GitHub PR
         run: |
-            # Extrair o texto da resposta do ChatGPT
-            output=$(echo "$response" | jq -r '.choices[0].text')
-      
-            # Construir o corpo do comentário
-            comment_body=$(jq -n --arg body "$output" '{"body": $body}')
-            
             # Postar o comentário na Pull Request usando GH_PAT
-            response=$(curl -s -w "HTTP_STATUS:%{http_code}" -H "Authorization: token ${{ secrets.GH_PAT }}" \
+            final_response=$(curl -s -w "HTTP_STATUS:%{http_code}" -H "Authorization: token ${{ secrets.GH_PAT }}" \
                  -H "Content-Type: application/json" \
                  -X POST \
-                 -d "$comment_body" \
+                 -d "$response" \
                  "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments")
             
-            echo "$response"
-            if [[ "$response" == *"HTTP_STATUS:403"* ]]; then
+            echo "$final_response"
+            if [[ "$final_response" == *"HTTP_STATUS:403"* || "$final_response" == *"HTTP_STATUS:422"* ]]; then
               echo "Failed to post comment due to permissions or other restrictions."
             fi
         env:
-            GH_PAT: ${{ secrets.GH_PAT }}
+         GH_PAT: ${{ secrets.GH_PAT }}
+      
       
