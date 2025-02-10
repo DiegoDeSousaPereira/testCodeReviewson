@@ -14,27 +14,23 @@ jobs:
         with:
           fetch-depth: 0  # Ensure the whole repo history is pulled
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Extract and Prepare PR Content
+      - name: Extract PR Content
         run: |
           git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
           git checkout FETCH_HEAD
           files_changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD)
           changes=""
           for file in $files_changed; do
-            changes+="$file:\n$(git diff ${{ github.event.pull_request.base.sha }} HEAD -- $file)\n"
+            diff=$(git diff ${{ github.event.pull_request.base.sha }} HEAD -- $file)
+            changes+="${file}:\n${diff}\n"
           done
           # Encode changes to base64 to ensure safe transmission
-          encoded_changes=$(echo "$changes" | base64)
-          echo "ENCODED_CHANGES=$encoded_changes" >> $GITHUB_ENV
+          encoded_changes=$(echo -n "$changes" | base64 -w 0)
+          echo "ENCODED_CHANGES=${encoded_changes}" >> $GITHUB_ENV
 
       - name: Call ChatGPT with PR content
         run: |
-          # Decode base64 changes to normal text if necessary
+          # Decode base64 changes to normal text (for debugging or if needed)
           decoded_changes=$(echo "${{ env.ENCODED_CHANGES }}" | base64 --decode)
           response=$(curl -s https://api.openai.com/v1/chat/completions \
             -H "Content-Type: application/json" \
