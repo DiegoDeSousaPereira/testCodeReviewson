@@ -36,13 +36,13 @@ jobs:
           encoded_changes=$(echo -n "$changes" | base64 -w 0)
           echo "ENCODED_CHANGES=$encoded_changes" >> $GITHUB_ENV
 
-      - name: Call ChatGPT with PR content and request for code review
+      - name: Call ChatGPT with PR content
         run: |
           # Decode base64 changes to normal text (for debugging or if needed)
           decoded_changes=$(echo "${{ env.ENCODED_CHANGES }}" | base64 --decode)
-
+        
           # Use jq to create JSON payload safely
-          json_payload=$(jq -n --arg changes "$decoded_changes" --arg prompt "Faça um code review breve, apontando onde posso incluir melhorias.\nMudanças:\n$changes" '{
+          json_payload=$(jq -n --arg changes "$decoded_changes" --arg prompt "Aqui estão as mudanças realizadas no código. Por favor, faça um code review breve, apontando onde posso incluir melhorias. \n\nMudanças:\n$changes" '{
             model: "gpt-4o-mini",
             store: true,
             messages: [
@@ -56,5 +56,5 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
             -d "$json_payload")
-          
+        
           echo "Response from ChatGPT: $response"
