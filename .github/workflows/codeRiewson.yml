@@ -20,16 +20,24 @@ jobs:
           node-version: 18
 
       - name: Extract PR Content
-        id: pr-content
         run: |
           # Fetching the merge reference of the PR
           git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
           git checkout FETCH_HEAD
-          # Assume we're focusing on a specific file's changes or PR description
+          # Extracting PR description
           pr_description="${{ github.event.pull_request.body }}"
-          echo "Response from ChatGPT: $pr_description"
+          echo "Extracted PR Description: $pr_description"
           echo "PR_DESCRIPTION<<EOF" >> $GITHUB_ENV
           echo "$pr_description" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Prepare PR Content for JSON
+        run: |
+          # Escape special characters to make the string JSON-safe
+          json_pr_description=$(echo "$PR_DESCRIPTION" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}')
+          echo "Formatted PR Description for JSON: $json_pr_description"
+          echo "JSON_SAFE_PR_DESCRIPTION<<EOF" >> $GITHUB_ENV
+          echo "$json_pr_description" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Call ChatGPT with PR content
@@ -41,7 +49,7 @@ jobs:
                     "model": "gpt-4o-mini",
                     "store": true,
                     "messages": [
-                        {"role": "user", "content": "'"$PR_DESCRIPTION"'"} 
+                        {"role": "user", "content": "'"${{ env.JSON_SAFE_PR_DESCRIPTION }}"'"} 
                     ]
                 }')
           echo "Response from ChatGPT: $response"
